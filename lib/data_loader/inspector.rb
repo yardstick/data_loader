@@ -24,12 +24,17 @@ module DataLoader
       columns = {}  # unordered hash containing date types for each header
 
       1.upto(inspect_rows) do
-        row = csv.gets
-        break unless row
-        row.each do |header, value|
-          columns[header] = promote_type(columns[header], dbtype(value))
+        begin
+          row = csv.gets
+          break unless row
+          row.each do |header, value|
+            columns[header] = promote_type(columns[header], dbtype(value))
+          end
+          first_row ||= row # save for later
+        rescue FasterCSV::MalformedCSVError => boom
+          # Don't care about the error but let's retry, since fastercsv will skip this line
+          retry
         end
-        first_row ||= row # save for later
       end
 
       # form an ordered array based on the first row read:
