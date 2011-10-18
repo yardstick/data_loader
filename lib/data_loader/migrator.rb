@@ -23,7 +23,7 @@ module DataLoader
     # uses MySQL LOAD DATA to import the whole file, ignoring the header line
     def self.load_data(file, table_name, separator = ',')
       sql = <<-SQL
-        LOAD DATA INFILE '#{file}' INTO TABLE #{table_name.to_s}
+        LOAD DATA LOCAL INFILE '#{file}' INTO TABLE #{table_name.to_s}
           FIELDS TERMINATED BY '#{separator}' ENCLOSED BY '"'
           LINES TERMINATED BY '\r\n'
           IGNORE 1 LINES;
