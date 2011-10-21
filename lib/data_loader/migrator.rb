@@ -1,11 +1,11 @@
 module DataLoader
 
   class Migrator
-    def self.migrate(file, columns, table, separator = ',', conn = :root)
+    def self.migrate(file, columns, table, separator = ',', conn = :root, local = false)
       with_connection(conn) do
         create_schema(table, columns)
         puts "-- load_data('#{File.basename(file)}', :#{table.to_s})"
-        load_data(file, table, separator)
+        load_data(file, table, local, separator)
       end
     end
 
@@ -21,9 +21,10 @@ module DataLoader
     end
 
     # uses MySQL LOAD DATA to import the whole file, ignoring the header line
-    def self.load_data(file, table_name, separator = ',')
+    def self.load_data(file, table_name, local, separator = ',')
+      local_txt = local ? "LOCAL" : ''
       sql = <<-SQL
-        LOAD DATA LOCAL INFILE '#{file}' INTO TABLE #{table_name.to_s}
+        LOAD DATA #{local_txt} INFILE '#{file}' INTO TABLE #{table_name.to_s}
           FIELDS TERMINATED BY '#{separator}' ENCLOSED BY '"'
           LINES TERMINATED BY '\r\n'
           IGNORE 1 LINES;
@@ -36,7 +37,7 @@ module DataLoader
       if Rails.env.development?
         yield
       else
-        ActiveRecord::Base.establish_connection(conn) 
+        ActiveRecord::Base.establish_connection(conn)
         yield
         ActiveRecord::Base.establish_connection(RAILS_ENV)
       end

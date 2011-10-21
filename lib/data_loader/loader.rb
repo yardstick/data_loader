@@ -13,6 +13,9 @@
 #     how many rows to scan the CSV file to determine the data types
 #   connection
 #     a connection name from database.yml to run it under (e.g. :production)
+#   use_local
+#     when true, use LOAD DATA LOCAL INFILE with MySQL if server can't access file
+#     requires MySQL to be compiled with --enable-local-infile
 #   default_ext
 #     extension to append if no file extension is specified
 #   separator
@@ -23,13 +26,14 @@
 module DataLoader
 
   class Loader
-    attr_accessor :folder, :table_prefix, :default_ext, :inspect_rows, :connection, :separator, :log
+    attr_accessor :folder, :table_prefix, :default_ext, :inspect_rows, :connection, :separator, :log, :use_local
 
     def initialize(folder = '', separator = ',', table_prefix = 'load', connection = :root)
       @folder, @separator = folder, separator
       @table_prefix, @connection = table_prefix, connection
       @default_ext = 'csv'
       @inspect_rows = 10
+      @use_local = false  # with MySQL INFILE
       @log = true
       yield(self) if block_given?
       @logfile = File.expand_path(File.join(@folder, 'data_loader.textile'))
@@ -43,18 +47,18 @@ module DataLoader
       table = [@table_prefix, table].join('_') unless @table_prefix.blank?
       columns = Inspector.inspect_file(full_file, @separator, @inspect_rows)
       log_columns(table, columns)
-      Migrator.migrate(full_file, columns, table, @separator, @connection)
+      Migrator.migrate(full_file, columns, table, @separator, @connection, @use_local)
       table
     end
-    
+
     def log(text)
       return unless @log
-      
+
       File.open(@logfile, 'a') do |file|
         file << text
       end
     end
-    
+
     def clear_log
       FileUtils.remove(@logfile) if File.exist?(@logfile)
     end
@@ -63,7 +67,7 @@ module DataLoader
 
     def log_columns(table, columns)
       return unless @log
-      
+
       File.open(@logfile, 'a') do |file|
         file << "\ntable{width:80%}.\n|_\\2. #{table} |\n"   # table header (textile)
         columns.each_with_index do |column, index|
@@ -75,7 +79,7 @@ module DataLoader
         end
       end
     end
-    
+
   end
 end
 
