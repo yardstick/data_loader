@@ -14,7 +14,7 @@ module DataLoader
     end
 
     # read a csv and return the columns and types in an ordered array
-    def self.inspect_file(file, separator = ',', inspect_rows = 10)
+    def self.inspect_file(file, separator = ',', inspect_rows = 10, hints = {})
       fields = nil
       FasterCSV.open(file,
         :col_sep => separator,
@@ -23,13 +23,13 @@ module DataLoader
         :header_converters => lambda {|h| h.underscore.gsub(/[^a-z0-9_]/, ' ').strip.gsub(' ', '_').squeeze('_') },
         :skip_blanks => true) do |csv|
           @row_sep = csv.row_sep
-          fields = scan_rows(csv, inspect_rows)
+          fields = scan_rows(csv, inspect_rows, hints)
       end
       fields
     end
 
     # scan a few rows to determine data types
-    def self.scan_rows(csv, inspect_rows)
+    def self.scan_rows(csv, inspect_rows, hints = {})
       first_row = nil
       columns = {}  # unordered hash containing data types for each header
 
@@ -51,13 +51,35 @@ module DataLoader
       fields = []
       first_row.each do |header, value|
         data_type = columns[header]
-        if data_type.nil?
-          # default to :string if everything was nil
-          puts "Warning: type could not be determined for #{header}, defaulting to string."
-          data_type = :string
-        end
         fields << {:name => header, :type => data_type}
       end
+
+      # validate hints
+      hints.stringify_keys!
+      invalid_columns = hints.keys - fields.map {|f| f[:name]}
+      puts "Warning: hint column(s) not found: #{invalid_columns.join(', ')}" unless invalid_columns.empty?
+      invalid_types = hints.values - [:text, :string, :datetime, :integer]
+      abort "Error: hint types(s) are invalid: #{invalid_types.join(', ')}" unless invalid_types.empty?
+
+      fields.each do |field|
+        name, field_type = field[:name], field[:type]
+        # override columns with hints
+        if hints.has_key?(name)
+          hint_type = hints[name].to_sym
+          if field_type.nil?
+            puts "Note: undertermined type for #{name} hinted as #{hint_type}."
+          elsif hint_type != field_type
+            puts "Note: overriding type #{field_type} for #{name} with #{hint_type}."
+          end
+          field[:type] = hint_type
+        end
+        # default to :string if everything was nil (and no hint)
+        if field[:type].nil?
+          puts "Warning: type could not be determined for #{name}, defaulting to string."
+          field[:type] = :string
+        end
+      end
+
       fields
     end
 

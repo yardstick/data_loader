@@ -40,12 +40,16 @@ module DataLoader
       puts @logfile
     end
 
-    def load(filename, table = nil)
+    # load
+    # - filename - name of file to load (in folder and default_ext)
+    # - table - table to load file into (with table_prefix), derives from filename by default
+    # - hints - hash of column name => data type (one of :text, :string, :datetime, :integer)
+    def load(filename, table = nil, hints = {})
       filename = [filename, default_ext].join('.') if File.extname(filename).empty?
       full_file = File.expand_path(File.join(@folder, filename))
       table = Migrator.derive_table_name(filename) if table.nil?
       table = [@table_prefix, table].join('_') unless @table_prefix.blank?
-      columns = Inspector.inspect_file(full_file, @separator, @inspect_rows)
+      columns = Inspector.inspect_file(full_file, @separator, @inspect_rows, hints)
       row_sep = Inspector.row_sep
       log_columns(table, columns)
       Migrator.migrate(full_file, columns, table, @separator, @connection, @use_local, row_sep)
