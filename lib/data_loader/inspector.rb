@@ -1,9 +1,18 @@
 require 'fastercsv'
 require 'active_support'
 
+# FasterCSV will auto-detect the line separator, which we'd like to pass to MySQL
+class FasterCSV
+  attr_reader :row_sep
+end
+
 module DataLoader
 
   class Inspector
+    class << self
+      attr_reader :row_sep      # set after inspect_file
+    end
+
     # read a csv and return the columns and types in an ordered array
     def self.inspect_file(file, separator = ',', inspect_rows = 10)
       fields = nil
@@ -13,6 +22,7 @@ module DataLoader
         :headers => true,
         :header_converters => lambda {|h| h.underscore.gsub(/[^a-z0-9_]/, ' ').strip.gsub(' ', '_').squeeze('_') },
         :skip_blanks => true) do |csv|
+          @row_sep = csv.row_sep
           fields = scan_rows(csv, inspect_rows)
       end
       fields

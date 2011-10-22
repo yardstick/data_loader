@@ -46,8 +46,9 @@ module DataLoader
       table = Migrator.derive_table_name(filename) if table.nil?
       table = [@table_prefix, table].join('_') unless @table_prefix.blank?
       columns = Inspector.inspect_file(full_file, @separator, @inspect_rows)
+      row_sep = Inspector.row_sep
       log_columns(table, columns)
-      Migrator.migrate(full_file, columns, table, @separator, @connection, @use_local)
+      Migrator.migrate(full_file, columns, table, @separator, @connection, @use_local, row_sep)
       table
     end
 
