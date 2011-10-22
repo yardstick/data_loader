@@ -31,7 +31,7 @@ module DataLoader
     # scan a few rows to determine data types
     def self.scan_rows(csv, inspect_rows)
       first_row = nil
-      columns = {}  # unordered hash containing date types for each header
+      columns = {}  # unordered hash containing data types for each header
 
       1.upto(inspect_rows) do
         begin
@@ -50,7 +50,12 @@ module DataLoader
       # form an ordered array based on the first row read:
       fields = []
       first_row.each do |header, value|
-        data_type = columns[header] || :string  # default to :string if everything was nil
+        data_type = columns[header]
+        if data_type.nil?
+          # default to :string if everything was nil
+          puts "Warning: type could not be determined for #{header}, defaulting to string."
+          data_type = :string
+        end
         fields << {:name => header, :type => data_type}
       end
       fields
