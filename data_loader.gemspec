@@ -12,10 +12,11 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/nathany/data_loader"
   s.summary     = %q{Loads CSV data into MySQL, doing an initial scan to determine datatypes.}
   s.description = %q{Uses fastercsv to scan a few lines of a CSV and create a schema with ActiveRecord. It does the actual file load with MySQL LOAD DATA.}
-  
+
   s.add_dependency('fastercsv', '~> 1.5.4')
   s.add_dependency('activerecord', '~> 2.3')
   s.add_development_dependency('rspec', '~> 1.3')
+  s.add_development_dependency('rake', '~> 0.9.2')
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
