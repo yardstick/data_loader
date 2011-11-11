@@ -20,13 +20,13 @@
 #     extension to append if no file extension is specified
 #   separator
 #     a comma (,)
-#   log
-#     true/false
+#   log_file
+#     file to log to (eg. data_loader.textile), nil for no log
 
 module DataLoader
 
   class Loader
-    attr_accessor :folder, :table_prefix, :default_ext, :inspect_rows, :connection, :separator, :log, :use_local
+    attr_accessor :folder, :table_prefix, :default_ext, :inspect_rows, :connection, :separator, :log_file, :use_local
 
     def initialize(folder = '', separator = ',', table_prefix = 'load', connection = :root)
       @folder, @separator = folder, separator
@@ -34,10 +34,12 @@ module DataLoader
       @default_ext = 'csv'
       @inspect_rows = 10
       @use_local = false  # with MySQL INFILE
-      @log = true
       yield(self) if block_given?
-      @logfile = File.expand_path(File.join(@folder, 'data_loader.textile'))
-      puts @logfile
+      puts @log_file if log?
+    end
+
+    def log?
+      @log_file.present?
     end
 
     # load
@@ -57,23 +59,23 @@ module DataLoader
     end
 
     def log(text)
-      return unless @log
+      return unless log?
 
-      File.open(@logfile, 'a') do |file|
+      File.open(@log_file, 'a') do |file|
         file << text
       end
     end
 
     def clear_log
-      FileUtils.remove(@logfile) if File.exist?(@logfile)
+      FileUtils.remove(@log_file) if File.exist?(@log_file)
     end
 
   private
 
     def log_columns(table, columns)
-      return unless @log
+      return unless log?
 
-      File.open(@logfile, 'a') do |file|
+      File.open(@log_file, 'a') do |file|
         file << "\ntable{width:80%}.\n|_\\2. #{table} |\n"   # table header (textile)
         columns.each_with_index do |column, index|
           if index == 0
