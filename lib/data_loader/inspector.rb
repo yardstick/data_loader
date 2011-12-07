@@ -58,7 +58,7 @@ module DataLoader
       hints.stringify_keys!
       invalid_columns = hints.keys - fields.map {|f| f[:name]}
       puts "Warning: hint column(s) not found: #{invalid_columns.join(', ')}" unless invalid_columns.empty?
-      invalid_types = hints.values - [:text, :string, :datetime, :integer]
+      invalid_types = hints.values - [:text, :string, :datetime, :date, :integer]
       abort "Error: hint types(s) are invalid: #{invalid_types.join(', ')}" unless invalid_types.empty?
 
       fields.each do |field|
@@ -109,7 +109,7 @@ module DataLoader
       types.compact!
       if types.empty?
         nil
-      elsif (types - [:text, :string, :datetime, :integer]).length > 0 # unknown types
+      elsif (types - [:text, :string, :datetime, :integer, :date]).length > 0 # unknown types
         raise 'Unknown type'
       elsif Set.new(types).length == 1  # one type
         types.first
