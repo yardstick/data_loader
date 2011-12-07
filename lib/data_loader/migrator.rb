@@ -24,7 +24,7 @@ module DataLoader
 
     # empty strings import as 0000-00-00 00:00:00, convert to nil
     def self.nullify_dates(table_name, data_struct)
-      date_columns = data_struct.map {|column| column[:name] if column[:type] == :datetime }.compact!
+      date_columns = data_struct.map {|column| column[:name] if column[:type] == :datetime }.compact
       date_columns.each do |column|
         sql = <<-SQL
           UPDATE #{table_name}
@@ -38,8 +38,9 @@ module DataLoader
 
     def self.trim_strings(table_name, data_struct)
       # strings but not text
-      string_columns = data_struct.map {|column| column[:name] if column[:type] == :string }.compact!
-      return if string_columns.nil?
+      string_columns = data_struct.map {|column| column[:name] if column[:type] == :string }.compact
+      return if string_columns.empty?
+
       case_sql = string_columns.map do |column|
         %Q{
           `#{column}` = CASE WHEN CHAR_LENGTH(TRIM(`#{column}`)) = 0 THEN
