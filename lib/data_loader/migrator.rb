@@ -7,6 +7,7 @@ module DataLoader
         puts "-- load_data('#{File.basename(file)}', :#{table.to_s})"
         load_data(file, table, local, separator, row_sep)
         nullify_dates(table, columns)
+        trim_strings(table, columns)
       end
     end
 
@@ -32,6 +33,28 @@ module DataLoader
         SQL
         ActiveRecord::Base.connection.execute(sql)
       end
+    end
+
+
+    def self.trim_strings(table_name, data_struct)
+      # strings but not text
+      string_columns = data_struct.map {|column| column[:name] if column[:type] == :string }.compact!
+      return if string_columns.nil?
+      case_sql = string_columns.map do |column|
+        %Q{
+          `#{column}` = CASE WHEN CHAR_LENGTH(TRIM(`#{column}`)) = 0 THEN
+            NULL
+          ELSE
+            TRIM(`#{column}`)
+          END
+        }
+      end.join(', ')
+
+      sql = <<-SQL
+        UPDATE #{table_name}
+        SET #{case_sql}
+      SQL
+      ActiveRecord::Base.connection.execute(sql)
     end
 
     # uses MySQL LOAD DATA to import the whole file, ignoring the header line
