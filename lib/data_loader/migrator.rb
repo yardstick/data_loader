@@ -24,7 +24,7 @@ module DataLoader
 
     # empty strings import as 0000-00-00 00:00:00, convert to nil
     def self.nullify_dates(table_name, data_struct)
-      date_columns = data_struct.map {|column| column[:name] if column[:type] == :datetime }.compact
+      date_columns = data_struct.map {|column| column[:name] if [:datetime, :date].include?(column[:type]) }.compact
       date_columns.each do |column|
         sql = <<-SQL
           UPDATE #{table_name}
