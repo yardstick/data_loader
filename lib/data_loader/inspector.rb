@@ -92,8 +92,6 @@ module DataLoader
       elsif value.is_a?(String)
         if value.blank?
           nil
-        elsif value.length <= 255
-          :string
         else
           :text
         end
